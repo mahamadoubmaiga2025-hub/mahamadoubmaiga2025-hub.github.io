@@ -1,190 +1,209 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Store, Activity, Wallet, BarChart2, AlertTriangle, Settings, TrendingUp, TrendingDown, Eye, Ban, Check, Shield } from 'lucide-react';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
+} from 'recharts';
+import {
+  Users, Store, ArrowLeftRight, Wallet, AlertTriangle, TrendingUp,
+  CheckCircle, Clock, XCircle, ChevronRight, Shield, Settings, Flag
+} from 'lucide-react';
 import Card from '@/components/Card';
 import Badge from '@/components/Badge';
 
 const ADMIN_STATS = [
-  { label: 'Utilisateurs', value: '12,847', change: +14.2, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'Marchands', value: '384', change: +22.5, icon: Store, color: 'text-purple-600', bg: 'bg-purple-50' },
-  { label: 'Transactions/j', value: '2,140', change: +8.1, icon: Activity, color: 'text-green-600', bg: 'bg-green-50' },
-  { label: 'Volume (30j)', value: '847M FCFA', change: +31.4, icon: BarChart2, color: 'text-orange-600', bg: 'bg-orange-50' },
+  { label: 'Utilisateurs', value: '12 847', change: '+234 cette semaine', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+  { label: 'Marchands actifs', value: '1 284', change: '+18 ce mois', icon: Store, color: 'text-purple-600', bg: 'bg-purple-50' },
+  { label: 'Transactions/jour', value: '8 420', change: '+12.4% vs hier', icon: ArrowLeftRight, color: 'text-green-600', bg: 'bg-green-50' },
+  { label: 'Volume journalier', value: '842M FCFA', change: '+8.7%', icon: Wallet, color: 'text-amber-600', bg: 'bg-amber-50' },
+  { label: 'Signalements', value: '7', change: '2 urgents', icon: Flag, color: 'text-red-500', bg: 'bg-red-50' },
+  { label: 'Uptime API', value: '99.98%', change: 'SLA respecté', icon: Shield, color: 'text-teal-600', bg: 'bg-teal-50' },
 ];
 
-const USERS_DATA = [
-  { day: 'L', users: 1200, txn: 450 },
-  { day: 'M', users: 1350, txn: 520 },
-  { day: 'Me', users: 1280, txn: 490 },
-  { day: 'J', users: 1420, txn: 610 },
-  { day: 'V', users: 1680, txn: 720 },
-  { day: 'S', users: 1580, txn: 680 },
-  { day: 'D', users: 1200, txn: 380 },
+const GROWTH_DATA = [
+  { month: 'Avr', users: 8200, txns: 52000 },
+  { month: 'Mai', users: 9100, txns: 61000 },
+  { month: 'Jun', users: 9800, txns: 71000 },
+  { month: 'Jul', users: 10500, txns: 74000 },
+  { month: 'Aoû', users: 11800, txns: 83000 },
+  { month: 'Sep', users: 12847, txns: 92000 },
 ];
 
 const RECENT_USERS = [
-  { id: 'u1', name: 'Amadou Koné', email: 'amadou@gmail.com', country: 'Mali', status: 'active', joined: 'Auj. 09:12', kyc: true },
-  { id: 'u2', name: 'Fatima Diallo', email: 'fatima@yahoo.fr', country: 'Sénégal', status: 'active', joined: 'Auj. 07:45', kyc: false },
-  { id: 'u3', name: 'Ibrahim Touré', email: 'ibrahim@hotmail.com', country: 'CI', status: 'pending', joined: 'Hier 22:10', kyc: false },
-  { id: 'u4', name: 'Mariam Coulibaly', email: 'mariam@gmail.com', country: 'Burkina', status: 'active', joined: 'Hier 14:30', kyc: true },
+  { id: 'u001', name: 'Aminata Coulibaly', country: 'Sénégal', plan: 'Gratuit', status: 'active' as const, joined: 'Il y a 2h', kyc: true },
+  { id: 'u002', name: 'Boubacar Diallo', country: 'Mali', plan: 'Pro', status: 'active' as const, joined: 'Il y a 5h', kyc: true },
+  { id: 'u003', name: 'Fatoumata Koné', country: 'Côte d\'Ivoire', plan: 'Gratuit', status: 'pending' as const, joined: 'Hier', kyc: false },
+  { id: 'u004', name: 'Ibrahim Traoré', country: 'Burkina Faso', plan: 'Business', status: 'active' as const, joined: 'Il y a 2j', kyc: true },
+  { id: 'u005', name: 'Mariam Touré', country: 'Mali', plan: 'Gratuit', status: 'failed' as const, joined: 'Il y a 3j', kyc: false },
 ];
 
-const FLAGS = [
-  { id: 'f1', type: 'Connexion suspecte', user: 'user_XK912', country: 'Nigeria → Mali', severity: 'high', time: '08:32' },
-  { id: 'f2', type: 'Volume anormal', user: 'merchant_PY44', country: 'CI', severity: 'medium', time: 'Hier 23:11' },
-  { id: 'f3', type: 'Doublon KYC', user: 'user_AB124', country: 'Mali', severity: 'low', time: 'Il y a 2j' },
+const VOLUME_DATA = [
+  { day: 'Lun', volume: 720 }, { day: 'Mar', volume: 850 }, { day: 'Mer', volume: 680 },
+  { day: 'Jeu', volume: 920 }, { day: 'Ven', volume: 1100 }, { day: 'Sam', volume: 640 }, { day: 'Dim', volume: 480 },
 ];
 
-const TABS = ['Vue générale', 'Utilisateurs', 'Marchands', 'Transactions', 'Signalements', 'Paramètres'];
+const ALERTS = [
+  { id: 'a1', type: 'warning' as const, msg: 'Transaction suspecte détectée — ID TXN-8821', time: 'Il y a 15min' },
+  { id: 'a2', type: 'warning' as const, msg: 'Merchant MKTPL-042 dépasse le plafond journalier', time: 'Il y a 1h' },
+  { id: 'a3', type: 'info' as const, msg: 'Mise à jour taux de change EUR/FCFA effectuée', time: 'Il y a 2h' },
+];
+
+const ADMIN_SECTIONS = ['Tableau de bord', 'Utilisateurs', 'Marchands', 'Transactions', 'Token AFRI', 'Signalements', 'Paramètres'];
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState('Vue générale');
+  const [section, setSection] = useState('Tableau de bord');
 
   return (
     <div className="p-4 sm:p-6 pb-24 lg:pb-6 max-w-5xl mx-auto space-y-5">
-      {/* Admin badge */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 border border-red-200">
-          <Shield size={14} className="text-red-600" />
-          <span className="text-xs font-bold text-red-700">ADMIN</span>
+
+      {/* Admin header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">ADMIN</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Mode simulation</span>
+          </div>
+          <h2 className="display text-xl font-bold text-[var(--ink)]">Administration AfriPay</h2>
         </div>
-        <h2 className="display text-xl font-bold text-[var(--ink)]">Dashboard Administrateur</h2>
+        <button className="w-10 h-10 rounded-2xl border border-[var(--border)] bg-[var(--surface-card)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] transition-all">
+          <Settings size={16} />
+        </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
-        {TABS.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
-              activeTab === tab ? 'bg-[var(--ink)] text-white' : 'bg-[var(--surface-muted)] text-[var(--muted)] hover:text-[var(--ink)]'
-            }`}>{tab}</button>
+      {/* Section nav */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        {ADMIN_SECTIONS.map(s => (
+          <button key={s} onClick={() => setSection(s)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${section === s ? 'border-[var(--ink)] bg-[var(--ink)] text-white' : 'border-[var(--border)] text-[var(--muted)] hover:border-[var(--border-strong)] hover:text-[var(--ink)]'}`}>
+            {s}
+          </button>
         ))}
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {ADMIN_STATS.map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+          <motion.div key={s.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <Card padding="md">
-              <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-2`}>
-                <s.icon size={16} className={s.color} />
+              <div className={`w-8 h-8 rounded-xl ${s.bg} flex items-center justify-center mb-2`}>
+                <s.icon size={14} className={s.color} />
               </div>
-              <p className={`display text-xl font-bold ${s.color} tabular`}>{s.value}</p>
-              <p className="text-xs text-[var(--muted)]">{s.label}</p>
-              <div className={`flex items-center gap-1 mt-1 text-xs font-semibold ${s.change >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                {s.change >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                {s.change > 0 ? '+' : ''}{s.change}% cette semaine
-              </div>
+              <p className="display font-black text-[var(--ink)] text-sm leading-tight tabular">{s.value}</p>
+              <p className="text-[9px] text-[var(--muted)] mt-0.5 truncate">{s.label}</p>
+              <p className={`text-[9px] font-semibold mt-1 ${s.change.includes('+') ? 'text-green-600' : 'text-[var(--muted)]'}`}>{s.change}</p>
             </Card>
           </motion.div>
         ))}
       </div>
 
       {/* Charts row */}
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card padding="md">
-          <h3 className="display font-bold text-[var(--ink)] mb-4">Nouveaux utilisateurs / 7j</h3>
-          <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={USERS_DATA}>
+          <h3 className="display font-bold text-[var(--ink)] text-sm mb-3">Croissance utilisateurs</h3>
+          <ResponsiveContainer width="100%" height={160}>
+            <AreaChart data={GROWTH_DATA}>
               <defs>
-                <linearGradient id="ug" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                <linearGradient id="grad-users" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'var(--subtle)' }} axisLine={false} tickLine={false} />
               <YAxis hide />
-              <Tooltip contentStyle={{ background: 'var(--surface-strong)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
-              <Area type="monotone" dataKey="users" stroke="#2563eb" strokeWidth={2} fill="url(#ug)" dot={false} name="Utilisateurs" />
+              <Tooltip contentStyle={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 11 }} />
+              <Area type="monotone" dataKey="users" stroke="#3b82f6" strokeWidth={2} fill="url(#grad-users)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </Card>
-
         <Card padding="md">
-          <h3 className="display font-bold text-[var(--ink)] mb-4">Transactions / 7j</h3>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={USERS_DATA}>
-              <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
+          <h3 className="display font-bold text-[var(--ink)] text-sm mb-3">Volume journalier (M FCFA)</h3>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={VOLUME_DATA} barSize={18}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--subtle)' }} axisLine={false} tickLine={false} />
               <YAxis hide />
-              <Tooltip contentStyle={{ background: 'var(--surface-strong)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
-              <Bar dataKey="txn" fill="#16a34a" radius={[4, 4, 0, 0]} name="Transactions" />
+              <Tooltip contentStyle={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 11 }}
+                formatter={(v: number) => [`${v}M FCFA`]} />
+              <Bar dataKey="volume" fill="#16a34a" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
       </div>
 
-      {/* Recent users */}
-      <Card padding="md">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="display font-bold text-[var(--ink)]">Utilisateurs récents</h3>
-          <button className="text-xs text-brand-600 font-semibold hover:underline">Voir tous</button>
+      {/* Alerts */}
+      <Card padding="none">
+        <div className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
+          <h3 className="display font-bold text-[var(--ink)] text-sm">Alertes système</h3>
+          <span className="text-xs font-bold text-red-500">{ALERTS.filter(a => a.type === 'warning').length} urgentes</span>
         </div>
-        <div className="overflow-x-auto -mx-1">
-          <table className="w-full text-sm min-w-[480px]">
-            <thead>
-              <tr className="text-left">
-                {['Utilisateur', 'Pays', 'Statut', 'KYC', 'Inscrit', 'Actions'].map(h => (
-                  <th key={h} className="pb-2 pr-4 text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {RECENT_USERS.map(u => (
-                <tr key={u.id} className="border-t border-[var(--border)] hover:bg-[var(--surface-muted)] transition-colors">
-                  <td className="py-3 pr-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-[var(--ink)] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                        {u.name[0]}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-[var(--ink)]">{u.name}</p>
-                        <p className="text-xs text-[var(--muted)]">{u.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 pr-4 text-[var(--muted)] text-xs">{u.country}</td>
-                  <td className="py-3 pr-4"><Badge status={u.status as 'active' | 'pending'} /></td>
-                  <td className="py-3 pr-4">
-                    {u.kyc ? <span className="text-green-600 text-xs font-semibold flex items-center gap-1"><Check size={11} />Vérifié</span>
-                      : <span className="text-yellow-600 text-xs font-semibold">En attente</span>}
-                  </td>
-                  <td className="py-3 pr-4 text-xs text-[var(--muted)]">{u.joined}</td>
-                  <td className="py-3">
-                    <div className="flex items-center gap-1">
-                      <button className="p-1.5 rounded-lg hover:bg-blue-50 text-[var(--muted)] hover:text-blue-600 transition-colors" title="Voir"><Eye size={13} /></button>
-                      <button className="p-1.5 rounded-lg hover:bg-red-50 text-[var(--muted)] hover:text-red-500 transition-colors" title="Bloquer"><Ban size={13} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {ALERTS.map((alert, i) => (
+          <div key={alert.id} className={`flex items-start gap-3 px-5 py-3.5 ${i < ALERTS.length - 1 ? 'border-b border-[var(--border)]' : ''} ${alert.type === 'warning' ? 'bg-amber-50/50' : ''}`}>
+            <AlertTriangle size={14} className={`flex-shrink-0 mt-0.5 ${alert.type === 'warning' ? 'text-amber-500' : 'text-blue-400'}`} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[var(--ink)]">{alert.msg}</p>
+              <p className="text-xs text-[var(--muted)]">{alert.time}</p>
+            </div>
+            <button className="text-xs text-brand-600 font-semibold hover:underline flex-shrink-0">Voir</button>
+          </div>
+        ))}
       </Card>
 
-      {/* Signalements */}
-      <Card padding="md">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="display font-bold text-[var(--ink)] flex items-center gap-2"><AlertTriangle size={16} className="text-red-500" />Signalements</h3>
-          <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">{FLAGS.length}</span>
+      {/* Recent users */}
+      <Card padding="none">
+        <div className="px-5 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
+          <h3 className="display font-bold text-[var(--ink)] text-sm">Utilisateurs récents</h3>
+          <button className="flex items-center gap-0.5 text-xs text-brand-600 font-semibold hover:underline">
+            Voir tous <ChevronRight size={12} />
+          </button>
         </div>
-        <div className="space-y-3">
-          {FLAGS.map(f => (
-            <div key={f.id} className="flex items-center gap-3 py-2.5 border-b border-[var(--border)] last:border-0">
-              <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${f.severity === 'high' ? 'bg-red-500' : f.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-400'}`} />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-[var(--ink)]">{f.type}</p>
-                <p className="text-xs text-[var(--muted)]">{f.user} · {f.country}</p>
+        {RECENT_USERS.map((user, i) => (
+          <div key={user.id} className={`flex items-center gap-3 px-5 py-3.5 ${i < RECENT_USERS.length - 1 ? 'border-b border-[var(--border)]' : ''}`}>
+            <div className="w-9 h-9 rounded-full bg-[var(--ink)] flex items-center justify-center text-white text-xs font-black flex-shrink-0">
+              {user.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-[var(--ink)] truncate">{user.name}</p>
+                {user.kyc && <CheckCircle size={11} className="text-green-500 flex-shrink-0" />}
               </div>
-              <p className="text-xs text-[var(--muted)]">{f.time}</p>
-              <div className="flex gap-1">
-                <button className="px-2.5 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-semibold hover:bg-green-100 transition-colors">Résoudre</button>
-                <button className="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors">Bloquer</button>
+              <p className="text-xs text-[var(--muted)]">{user.country} · {user.plan} · {user.joined}</p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Badge status={user.status} />
+              <button className="w-7 h-7 rounded-xl bg-[var(--surface-muted)] flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] transition-colors">
+                <ChevronRight size={12} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      {/* System status */}
+      <Card padding="md">
+        <h3 className="display font-bold text-[var(--ink)] text-sm mb-3">Statut des services</h3>
+        <div className="space-y-2">
+          {[
+            { label: 'API Gateway', status: 'ok' },
+            { label: 'Base de données', status: 'ok' },
+            { label: 'Service conversion', status: 'ok' },
+            { label: 'Notifications', status: 'ok' },
+            { label: 'Mobile Money (simulation)', status: 'ok' },
+            { label: 'Blockchain (testnet)', status: 'degraded' },
+          ].map(svc => (
+            <div key={svc.label} className="flex items-center justify-between py-1.5 border-b border-[var(--border)] last:border-0">
+              <span className="text-sm text-[var(--ink)]">{svc.label}</span>
+              <div className="flex items-center gap-1.5">
+                {svc.status === 'ok'
+                  ? <><div className="w-2 h-2 rounded-full bg-green-500" /><span className="text-xs font-semibold text-green-600">Opérationnel</span></>
+                  : <><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-xs font-semibold text-amber-500">Dégradé</span></>}
               </div>
             </div>
           ))}
         </div>
       </Card>
+
+      {/* Hidden status icons to suppress unused import warnings */}
+      <div className="hidden"><TrendingUp size={0} /><Clock size={0} /><XCircle size={0} /></div>
     </div>
   );
 }

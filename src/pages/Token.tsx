@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { Zap, Shield, Vote, Star, Store, ArrowRight, Lock } from 'lucide-react';
+import { Zap, Shield, Vote, Star, Store, Lock } from 'lucide-react';
 import Card from '@/components/Card';
 
 const DISTRIBUTION = [

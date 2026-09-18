@@ -6,6 +6,7 @@
   --brand-50:  #f0fdf4;
   --brand-100: #dcfce7;
   --brand-200: #bbf7d0;
+  --brand-300: #86efac;
   --brand-400: #4ade80;
   --brand-600: #16a34a;
   --brand-700: #15803d;
@@ -16,6 +17,7 @@
   --ink-3:      #243447;
 
   /* Surfaces */
+  --surface-bg:      #f8f9fb;
   --surface-base:    #f8f9fb;
   --surface-card:    #ffffff;
   --surface-strong:  #f3f4f6;
@@ -38,10 +40,11 @@
   --ink-2:      #e5e7eb;
   --ink-3:      #d1d5db;
 
-  --surface-base:   #0d1117;
-  --surface-card:   #161b22;
-  --surface-strong: #21262d;
-  --surface-muted:  #1c2128;
+  --surface-bg:      #0d1117;
+  --surface-base:    #0d1117;
+  --surface-card:    #161b22;
+  --surface-strong:  #21262d;
+  --surface-muted:   #1c2128;
 
   --muted:   #8b949e;
   --subtle:  #6e7681;
@@ -58,8 +61,9 @@ html { font-size: 16px; -webkit-font-smoothing: antialiased; }
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
-  background: var(--surface-base);
+  background: var(--surface-bg);
   color: var(--ink);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ── Typography ── */
@@ -84,31 +88,75 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 
+/* ── Page transitions ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.25s ease forwards; }
+
 /* ── Tailwind custom utilities ── */
 @layer utilities {
   .shadow-card {
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 4px 12px 0 rgb(0 0 0 / 0.06);
   }
-
+  .shadow-card-hover {
+    box-shadow: 0 4px 16px 0 rgb(0 0 0 / 0.08), 0 1px 4px 0 rgb(0 0 0 / 0.04);
+  }
   .pb-safe {
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem));
   }
+  /* Glass utility for dark overlays */
+  .glass {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+  .bg-white\/8 { background-color: rgba(255,255,255,0.08); }
+  .bg-white\/15 { background-color: rgba(255,255,255,0.15); }
 }
 
 /* ── Brand color utilities ── */
+.bg-brand-50  { background-color: var(--brand-50); }
+.bg-brand-100 { background-color: var(--brand-100); }
+.bg-brand-200 { background-color: var(--brand-200); }
 .bg-brand-600 { background-color: var(--brand-600); }
 .bg-brand-700 { background-color: var(--brand-700); }
+.hover\:bg-brand-600:hover { background-color: var(--brand-600); }
 .hover\:bg-brand-700:hover { background-color: var(--brand-700); }
+.active\:bg-brand-700:active { background-color: var(--brand-700); }
+.text-brand-400 { color: var(--brand-400); }
 .text-brand-600 { color: var(--brand-600); }
 .text-brand-700 { color: var(--brand-700); }
 .border-brand-600 { border-color: var(--brand-600); }
 .border-brand-400 { border-color: var(--brand-400); }
+.border-brand-300 { border-color: var(--brand-300); }
 .border-brand-200 { border-color: var(--brand-200); }
-.border-brand-300 { border-color: #86efac; }
-.bg-green-50 { background-color: var(--brand-50); }
-.bg-green-100 { background-color: var(--brand-100); }
+.focus-within\:border-brand-400:focus-within { border-color: var(--brand-400); }
+.hover\:border-brand-400:hover { border-color: var(--brand-400); }
+.hover\:border-brand-300:hover { border-color: var(--brand-300); }
+.focus-within\:ring-2:focus-within { --tw-ring-shadow: 0 0 0 2px var(--tw-ring-color); box-shadow: var(--tw-ring-shadow); }
 .ring-brand-400\/10 { --tw-ring-color: color-mix(in srgb, var(--brand-400) 10%, transparent); }
-.focus-within\:ring-brand-400\/10:focus-within { ring-color: color-mix(in srgb, var(--brand-400) 10%, transparent); }
+.focus-within\:ring-brand-400\/10:focus-within { --tw-ring-color: color-mix(in srgb, var(--brand-400) 10%, transparent); }
+.shadow-brand-600\/20 { box-shadow: 0 8px 24px color-mix(in srgb, var(--brand-600) 20%, transparent); }
+.shadow-brand-600\/30 { box-shadow: 0 8px 24px color-mix(in srgb, var(--brand-600) 30%, transparent); }
+.hover\:text-brand-600:hover { color: var(--brand-600); }
 
 /* ── Recharts overrides ── */
 .recharts-tooltip-wrapper { outline: none; }
+.recharts-cartesian-axis-tick-value { font-size: 10px; fill: var(--subtle); }
+
+/* ── Input autofill fix ── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-muted) inset;
+  -webkit-text-fill-color: var(--ink);
+  transition: background-color 5000s ease-in-out;
+}
+
+/* ── Smooth transitions for theme changes ── */
+.dark body, body.dark {
+  color-scheme: dark;
+}

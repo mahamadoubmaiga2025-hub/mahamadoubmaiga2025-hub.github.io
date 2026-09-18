@@ -77,7 +77,7 @@ export function LoginPage() {
 
 // -------- REGISTER --------
 export function RegisterPage() {
-  const { navigate, login } = useApp();
+  const { navigate } = useApp();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
 

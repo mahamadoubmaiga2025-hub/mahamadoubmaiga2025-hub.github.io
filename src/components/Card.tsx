@@ -9,6 +9,7 @@ interface CardProps {
   onClick?: () => void;
   className?: string;
   animate?: boolean;
+  style?: React.CSSProperties;
 }
 
 const paddings = {
@@ -18,7 +19,7 @@ const paddings = {
   lg: 'p-7',
 };
 
-export default function Card({ children, padding = 'md', hover = false, onClick, className, animate = false }: CardProps) {
+export default function Card({ children, padding = 'md', hover = false, onClick, className, animate = false, style }: CardProps) {
   const base = clsx(
     'bg-[var(--surface-card)] border border-[var(--border)] rounded-3xl overflow-hidden',
     hover && 'cursor-pointer hover:shadow-card hover:border-[var(--border-strong)] transition-all duration-200',
@@ -33,6 +34,7 @@ export default function Card({ children, padding = 'md', hover = false, onClick,
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         className={base}
+        style={style}
         onClick={onClick}
       >
         {children}
@@ -41,7 +43,7 @@ export default function Card({ children, padding = 'md', hover = false, onClick,
   }
 
   return (
-    <div className={base} onClick={onClick}>
+    <div className={base} style={style} onClick={onClick}>
       {children}
     </div>
   );

@@ -1,190 +1,246 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, ArrowDownLeft, ArrowUpRight, RefreshCw } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
+import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, CreditCard } from 'lucide-react';
 import Card from '@/components/Card';
+import { useApp } from '@/hooks/useApp';
+import { CHART_DATA } from '@/data/mockData';
+import { formatUSD } from '@/utils/format';
 
-type Period = '7J' | '30J' | '90J' | '1A';
-
-const PORTFOLIO_DATA: Record<Period, { label: string; value: number }[]> = {
-  '7J': [
-    { label: 'L', value: 1890 }, { label: 'M', value: 1920 }, { label: 'Me', value: 1975 },
-    { label: 'J', value: 1960 }, { label: 'V', value: 2010 }, { label: 'S', value: 2045 }, { label: 'D', value: 2073 },
-  ],
-  '30J': Array.from({ length: 15 }, (_, i) => ({ label: String(i * 2 + 1), value: 1650 + i * 28 + Math.random() * 20 })),
-  '90J': Array.from({ length: 12 }, (_, i) => ({ label: `S${i + 1}`, value: 1200 + i * 80 + Math.random() * 30 })),
-  '1A': [
-    { label: 'Oct', value: 980 }, { label: 'Nov', value: 1050 }, { label: 'Déc', value: 1120 },
-    { label: 'Jan', value: 1240 }, { label: 'Fév', value: 1350 }, { label: 'Mar', value: 1280 },
-    { label: 'Avr', value: 1420 }, { label: 'Mai', value: 1550 }, { label: 'Jun', value: 1680 },
-    { label: 'Jul', value: 1820 }, { label: 'Aoû', value: 1950 }, { label: 'Sep', value: 2073 },
-  ],
-};
-
-const SPEND_DATA: Record<Period, { label: string; revenus: number; depenses: number }[]> = {
-  '7J': [
-    { label: 'L', revenus: 75000, depenses: 45000 }, { label: 'M', revenus: 50000, depenses: 25000 },
-    { label: 'Me', revenus: 120000, depenses: 60000 }, { label: 'J', revenus: 80000, depenses: 40000 },
-    { label: 'V', revenus: 95000, depenses: 70000 }, { label: 'S', revenus: 60000, depenses: 30000 },
-    { label: 'D', revenus: 40000, depenses: 20000 },
-  ],
-  '30J': Array.from({ length: 10 }, (_, i) => ({ label: String(i * 3 + 1), revenus: 80000 + i * 8000, depenses: 40000 + i * 4000 })),
-  '90J': Array.from({ length: 9 }, (_, i) => ({ label: `S${i * 2 + 1}`, revenus: 250000 + i * 20000, depenses: 150000 + i * 10000 })),
-  '1A': [
-    { label: 'Oct', revenus: 420000, depenses: 280000 }, { label: 'Nov', revenus: 460000, depenses: 310000 },
-    { label: 'Déc', revenus: 520000, depenses: 380000 }, { label: 'Jan', revenus: 490000, depenses: 340000 },
-    { label: 'Fév', revenus: 550000, depenses: 360000 }, { label: 'Mar', revenus: 580000, depenses: 390000 },
-    { label: 'Avr', revenus: 620000, depenses: 410000 }, { label: 'Mai', revenus: 680000, depenses: 440000 },
-    { label: 'Jun', revenus: 720000, depenses: 470000 }, { label: 'Jul', revenus: 760000, depenses: 490000 },
-    { label: 'Aoû', revenus: 800000, depenses: 510000 }, { label: 'Sep', revenus: 840000, depenses: 520000 },
-  ],
-};
-
-const ASSET_DISTRIBUTION = [
-  { name: 'FCFA', value: 59.8, color: '#16a34a' },
-  { name: 'USDC', value: 24.1, color: '#2563eb' },
-  { name: 'USDT', value: 12.1, color: '#7c3aed' },
-  { name: 'BTC', value: 4.0, color: '#f59e0b' },
+type Period = '7j' | '30j' | '90j' | '1a';
+const PERIODS: { val: Period; label: string }[] = [
+  { val: '7j', label: '7 jours' },
+  { val: '30j', label: '30 jours' },
+  { val: '90j', label: '90 jours' },
+  { val: '1a', label: '1 an' },
 ];
 
-const KPI_DATA: Record<Period, { total: string; revenus: string; depenses: string; transfers: string; revChange: number; depChange: number }> = {
-  '7J':  { total: '2 073 USD', revenus: '520 000 FCFA', depenses: '290 000 FCFA', transfers: '250 USD',  revChange: +12.4, depChange: -3.2 },
-  '30J': { total: '2 073 USD', revenus: '3 370 000 FCFA', depenses: '2 550 000 FCFA', transfers: '1 250 USD', revChange: +8.7, depChange: +2.1 },
-  '90J': { total: '2 073 USD', revenus: '8 100 000 FCFA', depenses: '5 400 000 FCFA', transfers: '3 740 USD', revChange: +22.1, depChange: -1.4 },
-  '1A':  { total: '2 073 USD', revenus: '26 800 000 FCFA', depenses: '17 200 000 FCFA', transfers: '12 000 USD', revChange: +31.4, depChange: +4.8 },
-};
+const EXPENSE_CATEGORIES = [
+  { name: 'Transferts', value: 42, color: '#16a34a' },
+  { name: 'Paiements', value: 28, color: '#0d9488' },
+  { name: 'Conversions', value: 18, color: '#f59e0b' },
+  { name: 'Mobile Money', value: 12, color: '#6366f1' },
+];
 
-const PERIODS: Period[] = ['7J', '30J', '90J', '1A'];
+// Monthly bar data
+const MONTHLY_DATA = [
+  { month: 'Avr', revenus: 210000, depenses: 145000 },
+  { month: 'Mai', revenus: 285000, depenses: 198000 },
+  { month: 'Jun', revenus: 320000, depenses: 175000 },
+  { month: 'Jul', revenus: 195000, depenses: 220000 },
+  { month: 'Aoû', revenus: 410000, depenses: 260000 },
+  { month: 'Sep', revenus: 337000, depenses: 255000 },
+];
+
+const WEEKLY_DATA = [
+  { day: 'Lun', revenus: 45000, depenses: 32000 },
+  { day: 'Mar', revenus: 68000, depenses: 41000 },
+  { day: 'Mer', revenus: 52000, depenses: 55000 },
+  { day: 'Jeu', revenus: 71000, depenses: 38000 },
+  { day: 'Ven', revenus: 89000, depenses: 62000 },
+  { day: 'Sam', revenus: 34000, depenses: 18000 },
+  { day: 'Dim', revenus: 22000, depenses: 9000 },
+];
+
+function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number }> }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-[var(--surface-card)] border border-[var(--border)] rounded-xl p-2.5 shadow text-xs">
+      <p className="font-bold text-[var(--ink)]">{payload[0].name}</p>
+      <p className="text-brand-600 font-black">{payload[0].value}%</p>
+    </div>
+  );
+}
 
 export default function AnalyticsPage() {
-  const [period, setPeriod] = useState<Period>('30J');
-  const kpi = KPI_DATA[period];
+  const { state } = useApp();
+  const [period, setPeriod] = useState<Period>('30j');
+  const chartData = period === '7j' ? CHART_DATA['7J'] : period === '1a' ? CHART_DATA['1A'] : period === '90j' ? CHART_DATA['1M'] : CHART_DATA['1M'];
+  const barData = period === '7j' ? WEEKLY_DATA : MONTHLY_DATA;
+  const barKey = period === '7j' ? 'day' : 'month';
+
+  // KPIs
+  const totalRev = MONTHLY_DATA.reduce((s, d) => s + d.revenus, 0);
+  const totalDep = MONTHLY_DATA.reduce((s, d) => s + d.depenses, 0);
+  const txCount = state.transactions.length;
+  const avgTx = txCount ? Math.round(totalRev / txCount) : 0;
+
+  const kpis = [
+    { label: 'Revenus totaux', value: `${totalRev.toLocaleString('fr-FR')} FCFA`, change: +18.4, icon: ArrowDownLeft, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'Dépenses totales', value: `${totalDep.toLocaleString('fr-FR')} FCFA`, change: -5.2, icon: ArrowUpRight, color: 'text-[var(--ink)]', bg: 'bg-[var(--surface-muted)]' },
+    { label: 'Transactions', value: `${txCount}`, change: +12.0, icon: ArrowLeftRight, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Tx. moyenne', value: `${avgTx.toLocaleString('fr-FR')} FCFA`, change: +3.7, icon: CreditCard, color: 'text-purple-600', bg: 'bg-purple-50' },
+  ];
 
   return (
-    <div className="p-4 sm:p-6 pb-24 lg:pb-6 max-w-5xl mx-auto space-y-5">
+    <div className="p-4 sm:p-6 pb-24 lg:pb-6 max-w-4xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="display text-xl font-bold text-[var(--ink)]">Analytics</h2>
         <div className="flex gap-1 bg-[var(--surface-muted)] rounded-xl p-1">
           {PERIODS.map(p => (
-            <button key={p} onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${period === p ? 'bg-[var(--surface-strong)] text-[var(--ink)] shadow-sm' : 'text-[var(--muted)] hover:text-[var(--ink)]'}`}>
-              {p}
+            <button key={p.val} onClick={() => setPeriod(p.val)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${period === p.val ? 'bg-[var(--surface-card)] text-[var(--ink)] shadow-sm' : 'text-[var(--muted)] hover:text-[var(--ink)]'}`}>
+              {p.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* KPIs */}
+      {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { label: 'Valeur portfolio', value: kpi.total, icon: RefreshCw, change: +8.4, color: 'text-[var(--ink)]' },
-          { label: 'Revenus', value: kpi.revenus, icon: ArrowDownLeft, change: kpi.revChange, color: 'text-green-600' },
-          { label: 'Dépenses', value: kpi.depenses, icon: ArrowUpRight, change: kpi.depChange, color: 'text-[var(--ink)]' },
-          { label: 'Transferts', value: kpi.transfers, icon: TrendingUp, change: +14.2, color: 'text-blue-600' },
-        ].map((k, i) => (
+        {kpis.map((k, i) => (
           <motion.div key={k.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
             <Card padding="md">
-              <p className="text-xs text-[var(--muted)] font-medium mb-1">{k.label}</p>
-              <p className={`display text-lg font-bold tabular ${k.color}`}>{k.value}</p>
-              <div className={`flex items-center gap-1 mt-1 text-xs font-semibold ${k.change >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                {k.change >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                {k.change > 0 ? '+' : ''}{k.change}% vs période préc.
+              <div className={`w-8 h-8 rounded-xl ${k.bg} flex items-center justify-center mb-2.5`}>
+                <k.icon size={14} className={k.color} />
+              </div>
+              <p className="display font-bold text-[var(--ink)] text-sm tabular leading-tight">{k.value}</p>
+              <p className="text-[10px] text-[var(--muted)] mt-0.5">{k.label}</p>
+              <div className={`flex items-center gap-0.5 mt-1.5 text-[10px] font-semibold ${k.change >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                {k.change >= 0 ? <TrendingUp size={9} /> : <TrendingDown size={9} />}
+                {k.change > 0 ? '+' : ''}{k.change}%
               </div>
             </Card>
           </motion.div>
         ))}
       </div>
 
-      {/* Portfolio chart */}
+      {/* Portfolio evolution */}
       <Card padding="md">
-        <h3 className="display font-bold text-[var(--ink)] mb-4 text-sm">Évolution du portefeuille (USD)</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={PORTFOLIO_DATA[period]}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="display font-bold text-[var(--ink)] text-sm">Évolution du portefeuille</h3>
+            <p className="text-xs text-[var(--muted)]">En USD</p>
+          </div>
+          <div className="text-right">
+            <p className="display font-black text-[var(--ink)]">{formatUSD(chartData[chartData.length - 1]?.value ?? 0)}</p>
+            <p className="text-[10px] text-green-600 font-semibold">+14.3% sur la période</p>
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={180}>
+          <AreaChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#16a34a" stopOpacity={0.15} />
+              <linearGradient id="grad-analytics" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2} />
                 <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--subtle)' }} axisLine={false} tickLine={false} />
             <YAxis hide domain={['auto', 'auto']} />
-            <Tooltip contentStyle={{ background: 'var(--surface-strong)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }}
+            <Tooltip contentStyle={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }}
               formatter={(v: number) => [`$${v.toFixed(0)}`, 'Valeur']} />
-            <Area type="monotone" dataKey="value" stroke="#16a34a" strokeWidth={2} fill="url(#pg)" dot={false} />
+            <Area type="monotone" dataKey="value" stroke="#16a34a" strokeWidth={2.5} fill="url(#grad-analytics)" dot={false} activeDot={{ r: 4, fill: '#16a34a', strokeWidth: 0 }} />
           </AreaChart>
         </ResponsiveContainer>
       </Card>
 
       {/* Revenus vs Dépenses */}
-      <div className="grid lg:grid-cols-2 gap-4">
+      <Card padding="md">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="display font-bold text-[var(--ink)] text-sm">Revenus vs Dépenses</h3>
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-brand-600" /><span className="text-[var(--muted)]">Revenus</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[var(--ink)]" /><span className="text-[var(--muted)]">Dépenses</span></div>
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={160}>
+          <BarChart data={barData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }} barSize={16} barGap={4}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+            <XAxis dataKey={barKey} tick={{ fontSize: 10, fill: 'var(--subtle)' }} axisLine={false} tickLine={false} />
+            <YAxis hide />
+            <Tooltip contentStyle={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 11 }}
+              formatter={(v: number) => [`${v.toLocaleString('fr-FR')} FCFA`]} />
+            <Bar dataKey="revenus" fill="#16a34a" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="depenses" fill="#0a1628" radius={[4, 4, 0, 0]} opacity={0.7} />
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
+
+      {/* Asset allocation + Category breakdown */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Asset allocation */}
         <Card padding="md">
-          <h3 className="display font-bold text-[var(--ink)] mb-4 text-sm">Revenus vs Dépenses (FCFA)</h3>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={SPEND_DATA[period]}>
-              <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
-              <YAxis hide />
-              <Tooltip contentStyle={{ background: 'var(--surface-strong)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }}
-                formatter={(v: number) => [v.toLocaleString('fr-FR') + ' FCFA']} />
-              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="revenus" fill="#16a34a" radius={[4, 4, 0, 0]} name="Revenus" />
-              <Bar dataKey="depenses" fill="#e5e7eb" radius={[4, 4, 0, 0]} name="Dépenses" />
-            </BarChart>
+          <h3 className="display font-bold text-[var(--ink)] text-sm mb-3">Allocation des actifs</h3>
+          <ResponsiveContainer width="100%" height={140}>
+            <PieChart>
+              <Pie data={state.wallets.map(w => ({ name: w.currency, value: Math.round(w.balanceUSD) }))}
+                cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={4} dataKey="value">
+                {state.wallets.map((_, i) => (
+                  <Cell key={i} fill={['#16a34a', '#0d9488', '#26a17b', '#f7931a', '#627eea'][i % 5]} stroke="none" />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 11 }}
+                formatter={(v: number) => [formatUSD(v)]} />
+            </PieChart>
           </ResponsiveContainer>
+          <div className="space-y-1.5 mt-2">
+            {state.wallets.map((w, i) => (
+              <div key={w.currency} className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full" style={{ background: ['#16a34a','#0d9488','#26a17b','#f7931a','#627eea'][i % 5] }} />
+                  <span className="text-[var(--muted)]">{w.currency}</span>
+                </div>
+                <span className="font-semibold text-[var(--ink)] tabular">{formatUSD(w.balanceUSD)}</span>
+              </div>
+            ))}
+          </div>
         </Card>
 
-        {/* Asset distribution */}
+        {/* Expense categories */}
         <Card padding="md">
-          <h3 className="display font-bold text-[var(--ink)] mb-4 text-sm">Répartition des actifs</h3>
-          <div className="flex items-center gap-4">
-            <ResponsiveContainer width={150} height={150}>
-              <PieChart>
-                <Pie data={ASSET_DISTRIBUTION} dataKey="value" cx="50%" cy="50%" innerRadius={45} outerRadius={68} strokeWidth={0}>
-                  {ASSET_DISTRIBUTION.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex-1 space-y-2">
-              {ASSET_DISTRIBUTION.map(a => (
-                <div key={a.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: a.color }} />
-                    <span className="text-xs font-semibold text-[var(--ink)]">{a.name}</span>
+          <h3 className="display font-bold text-[var(--ink)] text-sm mb-3">Catégories de dépenses</h3>
+          <ResponsiveContainer width="100%" height={140}>
+            <PieChart>
+              <Pie data={EXPENSE_CATEGORIES} cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={4} dataKey="value">
+                {EXPENSE_CATEGORIES.map((e, i) => <Cell key={i} fill={e.color} stroke="none" />)}
+              </Pie>
+              <Tooltip content={<PieTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="space-y-1.5 mt-2">
+            {EXPENSE_CATEGORIES.map(e => (
+              <div key={e.name} className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.color }} />
+                <div className="flex-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[var(--muted)]">{e.name}</span>
+                    <span className="font-semibold text-[var(--ink)] tabular">{e.value}%</span>
                   </div>
-                  <span className="text-xs text-[var(--muted)] tabular font-medium">{a.value}%</span>
+                  <div className="h-1 rounded-full bg-[var(--surface-muted)] overflow-hidden mt-0.5">
+                    <motion.div className="h-full rounded-full" style={{ background: e.color }}
+                      initial={{ width: 0 }} animate={{ width: `${e.value}%` }} transition={{ duration: 0.8 }} />
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </Card>
       </div>
 
-      {/* Payment methods breakdown */}
-      <Card padding="md">
-        <h3 className="display font-bold text-[var(--ink)] mb-4 text-sm">Sources de revenus</h3>
-        <div className="space-y-3">
-          {[
-            { label: 'Orange Money', pct: 55, amount: '185 350 FCFA', color: '#FF6600' },
-            { label: 'USDC / Crypto', pct: 25, amount: '84 250 FCFA', color: '#2563eb' },
-            { label: 'Wave', pct: 13, amount: '43 810 FCFA', color: '#1A9EFF' },
-            { label: 'Autres', pct: 7, amount: '23 590 FCFA', color: '#9ca3af' },
-          ].map(s => (
-            <div key={s.label}>
-              <div className="flex justify-between mb-1">
-                <span className="text-xs font-semibold text-[var(--ink)]">{s.label}</span>
-                <span className="text-xs text-[var(--muted)] tabular">{s.amount} · {s.pct}%</span>
-              </div>
-              <div className="h-1.5 rounded-full bg-[var(--surface-muted)] overflow-hidden">
-                <motion.div className="h-full rounded-full" style={{ background: s.color }}
-                  initial={{ width: 0 }} animate={{ width: `${s.pct}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} />
-              </div>
-            </div>
-          ))}
+      {/* Recent top transactions */}
+      <Card padding="none">
+        <div className="px-5 py-3.5 border-b border-[var(--border)]">
+          <h3 className="display font-bold text-[var(--ink)] text-sm">Top transactions</h3>
         </div>
+        {state.transactions.slice(0, 5).map((tx, i) => (
+          <div key={tx.id} className={`flex items-center gap-3 px-5 py-3.5 ${i < 4 ? 'border-b border-[var(--border)]' : ''}`}>
+            <span className="w-5 text-xs text-[var(--muted)] tabular font-bold">{i + 1}</span>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${tx.amount > 0 ? 'bg-green-50' : 'bg-[var(--surface-muted)]'}`}>
+              {tx.amount > 0 ? <ArrowDownLeft size={13} className="text-green-600" /> : <ArrowUpRight size={13} className="text-[var(--muted)]" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[var(--ink)] truncate">{tx.description}</p>
+              <p className="text-xs text-[var(--muted)]">{new Date(tx.date).toLocaleDateString('fr-FR')}</p>
+            </div>
+            <p className={`text-sm font-bold tabular flex-shrink-0 ${tx.amount > 0 ? 'text-green-600' : 'text-[var(--ink)]'}`}>
+              {tx.amount > 0 ? '+' : ''}{Math.abs(tx.amount).toLocaleString('fr-FR')} {tx.currency}
+            </p>
+          </div>
+        ))}
       </Card>
     </div>
   );

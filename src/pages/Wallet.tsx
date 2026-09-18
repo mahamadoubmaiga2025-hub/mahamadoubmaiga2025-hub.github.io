@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, QrCode, ArrowDownLeft, Send, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { Copy, Check, QrCode, ArrowDownLeft, Send, Eye, EyeOff } from 'lucide-react';
 import Card from '@/components/Card';
 import CurrencyIcon from '@/components/CurrencyIcon';
 import Badge from '@/components/Badge';
-import Button from '@/components/Button';
+
 import { useApp } from '@/hooks/useApp';
 import { formatAmount, formatUSD, formatRelativeDate } from '@/utils/format';
 import { toast } from 'sonner';
